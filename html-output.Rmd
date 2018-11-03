@@ -1,0 +1,118 @@
+---
+title: "HTML output"
+author: "Peter Kamerman"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+    html_document:
+        toc: true
+        toc_depth: 4
+        toc_float: true
+        code_folding: show
+---
+
+## Preamble
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Session setup
+```{r setup, message = FALSE}
+# Load libraries
+library(tidyverse)
+library(magrittr)
+library(pander)
+library(skimr)
+
+# Knitr options
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center')
+```
+
+## Import data
+```{r import}
+data <- read_csv('data/iris.csv')
+```
+
+## Inspect data
+```{r inspect_1}
+head(data)
+```
+```{r inspect_2, results = 'asis'}
+skim(data) %>% 
+    kable(caption = 'Data summary')
+```
+
+****
+
+## Exploratory plots
+
+#### Length data
+```{r plot_length}
+ggplot(data) +
+    aes(x = Sepal.Length, y = Petal.Length, 
+        fill = Species, colour = Species) +
+    geom_point(shape = 21, size = 2) +
+    geom_smooth(method = 'lm', se = FALSE,
+                size = 0.8, linetype = 2) +
+    labs(title = 'Sepal length vs petal length',
+         x = 'Sepal length (mm)', y = 'Petal length (mm)') +
+    scale_fill_brewer(type = 'qual', palette = 'Dark2') +
+    scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+    theme_bw(base_size = 14) +
+    theme(panel.grid = element_blank())
+```
+
+#### Width data
+```{r plot_width}
+ggplot(data) +
+    aes(x = Sepal.Width, y = Petal.Width, 
+        fill = Species, colour = Species) +
+    geom_point(shape = 21, size = 2) +
+    geom_smooth(method = 'lm', se = FALSE,
+                size = 0.8, linetype = 2) +
+    labs(title = 'Sepal width vs petal width',
+         x = 'Sepal width (mm)', y = 'Petal width (mm)') +
+    scale_fill_brewer(type = 'qual', palette = 'Dark2') +
+    scale_colour_brewer(type = 'qual', palette = 'Dark2') +
+    theme_bw(base_size = 14) +
+    theme(panel.grid = element_blank())
+```
+
+****
+
+## Some correlations
+
+#### Length data
+```{r cor_length, results = 'asis'}
+data %>% 
+    group_by(Species) %>% 
+    nest() %>% 
+    mutate(correlations = map(.x = data,
+                              ~ cor.test(.$Sepal.Length, .$Petal.Length))) %>% 
+    .$correlations %>% 
+    set_names(., value = str_to_upper(unique(c(data$Species)))) %>% 
+    map(~ broom::tidy(.x)) %>% 
+    map(~ knitr::kable(.x, format = 'markdown'))
+```
+
+#### Width data
+```{r cor_width, results = 'asis'}
+data %>% 
+    group_by(Species) %>% 
+    nest() %>% 
+    mutate(correlations = map(.x = data,
+                              ~ cor.test(.$Sepal.Width, .$Petal.Width))) %>% 
+    .$correlations %>% 
+    set_names(., value = str_to_upper(unique(c(data$Species)))) %>% 
+    map(~ broom::tidy(.x)) %>% 
+    map(~ knitr::kable(.x, format = 'markdown'))
+```
+
+****
+
+## Session information
+```{r info}
+sessionInfo()
+```
